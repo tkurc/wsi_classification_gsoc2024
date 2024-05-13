@@ -22,11 +22,11 @@
    - Define training parameters such as batch size, learning rate, and optimization algorithm.
 
 5. **Training Procedure:**
-   5(a) - Train only classifier
+   - 5(a) - Train only classifier
         - Train the classifier using the pre-trained features extracted from the chosen foundation model.
         - Implement training procedures to iteratively update the classifier parameters and optimize its performance on the training data.
         - Monitor training progress and evaluate performance metrics on the validation set to prevent overfitting.
-   5(b) - Train/fine-tune foundation model + classifier end-to-end
+   - 5(b) - Train/fine-tune foundation model + classifier end-to-end
         - Unfreeze the foundation model parameters
         - Train both the foundation model and classifier end-to-end 
 7. **Whole Slide Image Analysis:**
