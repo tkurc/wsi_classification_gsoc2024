@@ -26,8 +26,8 @@
    - Implement training procedures to iteratively update the classifier parameters and optimize its performance on the training data.
    - Monitor training progress and evaluate performance metrics on the validation set to prevent overfitting.
 
-6. **Whole Slide Image Classification:**
-   - Implement procedures to classify patches at the whole slide image level using the trained model.
+6. **Whole Slide Image Analysis:**
+   - Implement procedures to classify patches in whole slide images using the trained model.
    - Visualize and interpret the classification results to assess the model's performance on whole slide images.
 
 7. **Documentation and Reporting:**
