@@ -22,19 +22,22 @@
    - Define training parameters such as batch size, learning rate, and optimization algorithm.
 
 5. **Training Procedure:**
-   - Train the classifier using the pre-trained features extracted from the chosen foundation model.
-   - Implement training procedures to iteratively update the classifier parameters and optimize its performance on the training data.
-   - Monitor training progress and evaluate performance metrics on the validation set to prevent overfitting.
-
-6. **Whole Slide Image Analysis:**
+   5(a) - Train only classifier
+        - Train the classifier using the pre-trained features extracted from the chosen foundation model.
+        - Implement training procedures to iteratively update the classifier parameters and optimize its performance on the training data.
+        - Monitor training progress and evaluate performance metrics on the validation set to prevent overfitting.
+   5(b) - Train/fine-tune foundation model + classifier end-to-end
+        - Unfreeze the foundation model parameters
+        - Train both the foundation model and classifier end-to-end 
+7. **Whole Slide Image Analysis:**
    - Implement procedures to classify patches in whole slide images using the trained model.
    - Visualize and interpret the classification results to assess the model's performance on whole slide images.
 
-7. **Documentation and Reporting:**
+8. **Documentation and Reporting:**
    - Document the entire phase, including model selection, feature extraction process, classifier architecture, training setup, evaluation results, and whole slide image classification procedure.
    - Prepare a comprehensive report summarizing the phase's objectives, methodologies, findings, and any recommendations for future work.
 
-8. **Review and Iteration:**
+9. **Review and Iteration:**
    - Review the phase's outcomes and performance metrics.
    - Identify potential areas for improvement or refinement in the workflow, model architecture, or training procedures.
    - Iterate on the phase's components as necessary to enhance the overall performance and efficiency of the system.
