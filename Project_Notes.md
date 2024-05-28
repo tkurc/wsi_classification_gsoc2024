@@ -6,6 +6,6 @@
     <b>[May 27, 2024]</b> Working on the huggingface interface. <br>
     <ol>
       <li>Import the models that you want to chose and make a streamlit drop down to select the model.(ViT, DinoV2, ResNet, ConvXT)</li>
-      <li>Somehow connect the script with huggingFace and to show all the available models on huggingFace</li>
+      <li>Somehow connect the script with huggingFace and to show all the available models on huggingFace. See https://huggingface.co/docs/api-inference/en/index </li>
     </ol>
 </details>
