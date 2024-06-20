@@ -22,9 +22,9 @@ pip install -r requirements.txt
 # 2. Dataset
 Training dataset by combining manually annotated patches(strong annotations)from 18 TCGA cancer types(ACC, BRCA,COAD, ESCA, HNSC, KIRC, LIHC, LUAD, MESO, OV, PAAD, PRAD, SARC, SKCM, TGCT, THYM, UCEC, and UVM) and model generated annotations from 4 TCGA cancer types (CESC, LUSC, READ, and STAD). For more details and download the dataset visit [here](https://zenodo.org/records/6604094).
 
-<img src="https://drive.google.com/file/d/1aLL1PWk9LibT_p5ieH9izxFjVwUEKdqo/view?usp=drive_link" width="350" alt="accessibility text">
+<!-- <img src="https://drive.google.com/file/d/1aLL1PWk9LibT_p5ieH9izxFjVwUEKdqo/" width="350"> -->
 
-
+![Example Image](./figures/images.jpeg)
 # 3. Run Demo
 ```
 streamlit run app.py
