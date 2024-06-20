@@ -1,194 +1,206 @@
 # Importing the libraries
+import time
 import streamlit as st
+from stqdm import stqdm
 import matplotlib.pyplot as plt
 import pandas as pd
-from transformers import ViTModel
+from tqdm import tqdm
 from PIL import Image
+import yaml
+import json
+import subprocess
+
+# Torch imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
-from stqdm import stqdm
 from torch.utils.data import DataLoader
 
-# Title of the app
-st.title('Classification of Tumor Infiltrating Lymphocytes in Whole Slide Images of 23 Types of Cancer using Hugging Face')
 
-# Check if 'selected_model' and 'training_started' are in session_state, if not, initialize them
-if 'selected_model' not in st.session_state:
-    st.session_state.selected_model = None
-if 'training_started' not in st.session_state:
-    st.session_state.training_started = False
+# From the local imports
+from dataset import ThymDataset
+from ViT_CNN_Block import ViTWithCustomCNN
+from training import training, training_config
+from wsi_infer import wsi_infer
 
-model_dir_dict = {
-    "vit-base-patch16-224-in21k": "google/vit-base-patch16-224-in21k",
-    "vit-base-patch32-224-in21k": "google/vit-base-patch32-224-in21k",
-    "vit-large-patch16-224-in21k": "google/vit-large-patch16-224-in21k",
-    "dinov2-base": "facebook/dinov2-base",
-    "dino-vitb8": "facebook/dino-vitb8",
-    "dino-vits8": "facebook/dino-vits8",
-    "deit-base-distilled-patch16-224": "facebook/deit-base-distilled-patch16-224",
-    "vit-dino16": "facebook/dino-vits16"
-}
+from CNN_Blocks import CustomCNN_01, CustomCNN_02, CustomCNN_03, CustomCNN_04
 
-# Create the selectbox for model selection
-selected_model = st.selectbox(
-    "Select any model from the following:",
-    ["None"] + list(model_dir_dict.keys())
-)
+# Hugging Face imports
+from transformers import ViTModel, AutoFeatureExtractor
 
-# Add a button to start training
-if selected_model != "None":
-    if st.button("Start Training"):
-        # Update the session_state with the selected model
-        st.session_state.selected_model = selected_model
-        st.session_state.training_started = True
-
-# Check if training should start
-if st.session_state.training_started:
-    st.write(f"Selected model: {st.session_state.selected_model}")
-
-    # Load the model
-    model = ViTModel.from_pretrained(model_dir_dict[st.session_state.selected_model])
-
-    # Preparing the Dataset
-    from create_dataset import ThymDataset
+# Load the Data
+def load_dataset():
     data_class = ThymDataset()
     df = data_class.load_data()
-
-    # Function to plot images with labels
-    def plot_images_with_labels(df, num_images=5):
-        sample = df.sample(n=num_images).reset_index(drop=True)
-        fig, axes = plt.subplots(1, num_images, figsize=(35, 25))
-        for i in range(num_images):
-            file_path = sample.loc[i, 'file_path']
-            label = sample.loc[i, 'label']
-            image = Image.open(file_path)
-            ax = axes[i]
-            ax.imshow(image)
-            ax.axis('off')
-            ax.set_title(f'Label: {label}', fontsize=40)
-        st.pyplot(fig)
-
-    st.title("Image Label Viewer")
-    if 'df' in locals():
-        num_images = st.slider("Select the number of images to display:", min_value=1, max_value=20, value=5)
-        plot_images_with_labels(df, num_images=num_images)
-    else:
-        st.write("DataFrame 'df' is not defined. Please load the data.")
-
+    
     # Convert the data to Hugging Face dataset format
     huggingface_dataset = data_class.convert_to_huggingface_dataset_format()
-    from transformers import AutoFeatureExtractor
-    feature_extractor = AutoFeatureExtractor.from_pretrained(model_dir_dict[st.session_state.selected_model])
+    return huggingface_dataset
 
+# Select the model
+def load_config():
+    with open("./config/models.yaml", "r") as file:
+        cfg = yaml.safe_load(file)
+    return cfg
+
+def model_selection(cfg):
+    Vit_Models = cfg['Vit_Models']
+    
+    st.header("Foundation Models")
+
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = None
+    
+    if 'training_started' not in st.session_state:
+        st.session_state.training_started = False 
+
+    # User selects model from the list or chooses to input a custom model
+    option = st.radio(
+        "Select a model option:",
+        ('Select from list', 'Enter custom model path')
+    )
+
+    if option == 'Select from list':
+        selected_model = st.selectbox(
+            "Select any model from the following:",
+            ["None"] + list(Vit_Models.values())
+        )
+    else:
+        selected_model = st.text_input("Enter the custom model path:")
+
+    # Store the selected model in session state
+    st.session_state.selected_model = selected_model
+
+    # Display the selected model
+    st.write(f"Selected model: {selected_model}")
+    return selected_model
+
+
+# Apply preocessing on the images
+def preprocess_and_apply(huggingface_dataset, selected_model):
+    feature_extractor = AutoFeatureExtractor.from_pretrained(selected_model)
+    
     def preprocess_images(example):
         image = Image.open(example['file_path']).convert("RGB")
         encoding = feature_extractor(images=image, return_tensors="pt")
         example['pixel_values'] = encoding['pixel_values'][0]
         return example
 
+    # Apply the preprocess_images function to the train, validation, and test sets
     train_dataset_dict = huggingface_dataset['train'].map(preprocess_images)
     train_dataset_dict.set_format(type='torch', columns=['pixel_values', 'label'])
+    
     val_dataset_dict = huggingface_dataset['validation'].map(preprocess_images)
     val_dataset_dict.set_format(type='torch', columns=['pixel_values', 'label'])
+    
     test_dataset_dict = huggingface_dataset['test'].map(preprocess_images)
     test_dataset_dict.set_format(type='torch', columns=['pixel_values', 'label'])
 
-    # Define the model
-    class ViTWithCNNHead(nn.Module):
-        def __init__(self, vit_model):
-            super(ViTWithCNNHead, self).__init__()
-            self.vit = vit_model
-            self.cnn_head = nn.Sequential(
-                nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),
-                nn.Flatten(),
-                nn.Linear(128, 2)
-            )
+    return train_dataset_dict, val_dataset_dict, test_dataset_dict
 
-        def forward(self, pixel_values):
-            with torch.no_grad():
-                vit_outputs = self.vit(pixel_values=pixel_values)
-            cls_output = vit_outputs.last_hidden_state[:, 0]
-            cls_output = cls_output.unsqueeze(1).unsqueeze(2)
-            cnn_output = self.cnn_head(cls_output)
-            return cnn_output
 
-    # Load the ViT model and freeze its parameters
-    vit_model = ViTModel.from_pretrained(model_dir_dict[st.session_state.selected_model])
+
+# Define the Model
+def model_setup(model_dir):
+    vit_model = ViTModel.from_pretrained(model_dir)
+    # Freeze ViT encoder layers
     for param in vit_model.parameters():
-        param.requires_grad = False
+        param.requires_grad = False  # Freeze encoder weights
+    
+    st.header("Custom CNN Block")
 
-    # Instantiate the custom model
-    model = ViTWithCNNHead(vit_model)
+    if "cnn_layers" not in st.session_state:
+        st.session_state.cnn_layers = 0
+    
+    if "cnn_features" not in st.session_state:
+        st.session_state.cnn_features = 0
+    
+    if "cnn_block" not in st.session_state:
+        st.session_state.cnn_block = None
 
-    # Training setup
-    epochs = 10
-    batch_size = 16
-    learning_rate = 1e-3
+    # Select the CNN block
+    cnn_block = st.radio(
+        "Select the CNN block:",
+        ["CustomCNN_01", "CustomCNN_02", "CustomCNN_03", "CustomCNN_04"]
+    )
+    # Store the selected CNN block in session state
+    st.session_state.cnn_block = cnn_block
+    st.write(f"Selected CNN block: {cnn_block}")
+    
+    # Select the number of CNN layers
+    cnn_layers = st.selectbox(
+        "Enter the number of CNN layers: ",
+        [2, 3, 4, 5 , 6],
+    )
+    # Store the layers in session state
+    st.session_state.cnn_layers = cnn_layers
+    st.write("Selected number of layers is : ", cnn_layers)
 
-    def collate_fn(batch):
-        pixel_values = torch.stack([item['pixel_values'] for item in batch])
-        labels = torch.tensor([item['label'] for item in batch])
-        return {'pixel_values': pixel_values, 'label': labels}
+    # Select the number of features
+    cnn_features = st.selectbox(
+        "Enter the number of features: ",
+        [64, 128, 256, 512, 768, 1024, 2048],
+    )
+    # Store the features in session state
+    st.session_state.cnn_features = cnn_features
+    st.write("Selected hidden dimension is: ", cnn_features)
+    
 
-    train_loader = DataLoader(train_dataset_dict, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    validation_loader = DataLoader(val_dataset_dict, batch_size=batch_size, collate_fn=collate_fn)
-    test_loader = DataLoader(test_dataset_dict, batch_size=batch_size, collate_fn=collate_fn)
+    model = ViTWithCustomCNN(vit_model, cnn_block, cnn_layers, cnn_features)
+    
+    # Number of trainable parameters
+    trainable_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    st.write('Number of trainable parameters:', '{0:.3f} Million'.format(trainable_parameters/1000000 ))
+    
+    return model
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.CrossEntropyLoss()
+def main():
+    st.title('Classification of Tumor Infiltrating Lymphocytes in Whole Slide Images of 23 Types of Cancer using Hugging Face')
 
-    st.title("Model Training Progress")
-    epoch_text = st.empty()
-    validation_text = st.empty()
+    # Initialize session state
+    if 'training_completed' not in st.session_state:
+        st.session_state.training_completed = False
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    # Training section
+    if not st.session_state.training_completed:
+        st.subheader("Training")
+        cfg = load_config()
+        selected_model = model_selection(cfg)
+        
+        if selected_model != "None":
+            my_dataset = load_dataset()
+            model = model_setup(selected_model)
+            epochs, batch_size, early_stopping = training_config()
 
-    for epoch in range(epochs):
-        model.train()
-        running_loss = 0.0
-        train_loader_len = len(train_loader)
+            if st.button("Start Training"):
+                # Update the session_state with the selected model
+                st.session_state.training_started = True
+                st.session_state.training_completed = False
 
-        for batch in stqdm(train_loader, backend=False, frontend=True, desc=f"Epoch {epoch+1}/{epochs}", leave=False):
-            inputs = batch['pixel_values'].to(device)
-            labels = batch['label'].to(device)  
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
+                # Process the dataset
+                with st.spinner('Preprocessing images!! Wait for it...'):
+                    train_dataset_dict, val_dataset_dict, test_dataset_dict = preprocess_and_apply(my_dataset, selected_model)
+                    total_time = len(train_dataset_dict) + len(val_dataset_dict) + len(test_dataset_dict)
+                    map_time = total_time // 240
+                    time.sleep(map_time)
+                st.success('Preprocessing Done!')
 
-        avg_train_loss = running_loss / train_loader_len
-        epoch_text.text(f"Epoch {epoch+1}/{epochs}, Training Loss: {avg_train_loss:.4f}")
+                # Load the selected model
+                try:
+                    training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epochs, batch_size, early_stopping)
+                    st.session_state.training_completed = True
+                    st.success('Training Completed!')
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    st.session_state.training_completed = False
+        else:
+            st.write("Please select a model")
 
-        model.eval()
-        validation_loss = 0.0
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for batch in validation_loader:
-                inputs = batch['pixel_values'].to(device)
-                labels = batch['label'].to(device)  
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                validation_loss += loss.item()
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+    # Inference section
+    if st.session_state.training_completed:
+        st.subheader("Inference")
+        st.write("Training is complete. You can now proceed to inference.")
+        wsi_infer()
 
-        avg_validation_loss = validation_loss / len(validation_loader)
-        accuracy = 100 * correct / total
-        validation_text.text(f"Validation Loss: {avg_validation_loss:.4f}, Accuracy: {accuracy:.2f}%")
-
-    st.write("Training completed")
-else:
-    st.write("Please select a model from the list above and click 'Start Training'.")
+if __name__ == "__main__":
+    main()
