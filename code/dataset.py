@@ -49,66 +49,20 @@ class ThymDataset:
             return None
 
 
+# Load the Data
+def load_dataset():
 
+    """
+    Load the Thym dataset and convert it to Hugging Face dataset format
 
+    Returns:
+    --------
+    dataset: Hugging Face dataset format
 
-
-
-
-
-
-
-
-
-
-
-
-"""
-import os
-import pandas as pd
-from datasets import Dataset, DatasetDict
-
-class ThymDataset:
-    def __init__(self, root_dir='./thym'):
-        self.root_dir = root_dir
-        self.sub_dirs = ['train', 'test', 'val']
-        self.class_dirs = {'til-positive': 1, 'til-negative': 0}
-        self.data = []
-        self.image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif'}
-        
-        self.dataset_dict = self.load_and_convert_data()
-
-    def load_and_convert_data(self):
-        for sub_dir in self.sub_dirs:
-            for class_dir, label in self.class_dirs.items():
-                class_path = os.path.join(self.root_dir, sub_dir, class_dir)
-                
-                for file_name in os.listdir(class_path):
-                    if file_name.lower().endswith(tuple(self.image_extensions)):
-                        file_path = os.path.join(class_path, file_name)
-                        self.data.append([file_path, label])
-        
-        df = pd.DataFrame(self.data, columns=['file_path', 'label'])
-        if not df.empty:
-            print("Data loaded successfully")
-            dataset = Dataset.from_pandas(df)
-            
-            train_test_valid = dataset.train_test_split(test_size=0.3, seed=42)
-            test_valid = train_test_valid['test'].train_test_split(test_size=0.6, seed=42)
-
-            dataset_dict = DatasetDict({
-                'train': train_test_valid['train'],
-                'validation': test_valid['test'],
-                'test': test_valid['train']
-            })
-
-            return dataset_dict
-        else:
-            print("Data loading failed or DataFrame is empty")
-            return None
-
-# Usage example
-thym_dataset = ThymDataset()
-dataset_dict = thym_dataset.dataset_dict
-
-"""
+    """
+    data_class = ThymDataset()
+    df = data_class.load_data()
+    
+    # Convert the data to Hugging Face dataset format
+    huggingface_dataset = data_class.convert_to_huggingface_dataset_format()
+    return huggingface_dataset

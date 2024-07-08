@@ -1,140 +1,53 @@
-# Importing the libraries
 import streamlit as st
-from stqdm import stqdm
-import matplotlib.pyplot as plt
-import pandas as pd
-from tqdm import tqdm
-from PIL import Image
-import yaml
-import json
-from  matplotlib import pyplot as plt
-import matplotlib.ticker as mticker
-
-# Torch imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from stqdm import stqdm
+from utils import create_timestamped_dir, save_config_to_yaml,  save_metadata_to_json
+from earlystopping import EarlyStopping
+import yaml
+import json
+from config import ConfigBuilder
 
-# From the local imports
-from dataset import ThymDataset
-from ViT_CNN_Block import ViTWithCustomCNN
-from earlystopping import EarlyStopping # torchtools package is used for early stopping
+class TrainingConfig:
+    def __init__(self, epochs, batch_size, early_stopping):
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.early_stopping = early_stopping
 
-# Hugging Face imports
-from transformers import ViTModel, AutoFeatureExtractor
+    def __str__(self):
+        return f"TrainingConfig(epochs={self.epochs}, batch_size={self.batch_size}, early_stopping={self.early_stopping})"
 
-# Load utility functions
-from utils import create_timestamped_dir, save_config_to_yaml, save_metadata_to_json, save_model
+class TrainingConfigFactory:
+    @staticmethod
+    def create_config():
+        if "epochs" not in st.session_state:
+            st.session_state.epochs = 0
+        if "batch_size" not in st.session_state:
+            st.session_state.batch_size = 0
+        if "early_stopping_patience" not in st.session_state:
+            st.session_state.early_stopping_patience = 0
 
-def training_config():
-    if "epochs" not in st.session_state:
-        st.session_state.epochs = 0
+        epochs = st.selectbox("Enter the number of epochs:", [1, 5, 10, 20, 50, 100])
+        st.session_state.epochs = epochs
+        st.write("You have selected number of epochs:", epochs)
 
-    epochs = st.selectbox(
-        "Enter the number of epochs: ",
-        [1, 5, 10, 20, 50, 100],
-    )
-    st.session_state.epochs = epochs
-    st.write("You have selected number of epochs: ", epochs)
-    
-    if "batch_size" not in st.session_state:
-        st.session_state.batch_size = 0
-    
+        batch_size = st.selectbox("Enter the batch size:", [16, 32, 64, 128, 256])
+        st.session_state.batch_size = batch_size
+        st.write("You have selected batch size:", batch_size)
 
-    batch_size = st.selectbox(
-        "Enter the batch size: ",
-        [16, 32, 64, 128, 256],
-    )
-    
-    st.session_state.batch_size = batch_size
-    st.write("You have selected batch size: ", batch_size)
+        early_stopping_patience = st.selectbox("Select the number of epochs to wait before stopping the training:", [2, 5, 10, 20, 30, 40, 50])
+        st.session_state.early_stopping_patience = early_stopping_patience
+        st.write("You have selected early stopping patience:", early_stopping_patience)
 
-    if "early_stopping_patience" not in st.session_state:
-        st.session_state.early_stopping = 0
-    
-    early_stopping_patience = st.selectbox(
-        "Select the how many epochs to wait before stopping the training: ",
-        [2, 5, 10, 20, 30, 40, 50],
-    )
-    st.session_state.early_stopping_patience = early_stopping_patience
-    st.write("You have selected early stopping: ", early_stopping_patience)
+        early_stopping = EarlyStopping(patience=early_stopping_patience, verbose=True)
 
-    early_stopping = EarlyStopping(patience=early_stopping_patience, verbose=True)
-
-    return epochs, batch_size, early_stopping
-
-def save_config_yaml(model, optimizer, learning_rate, epochs, batch_size, early_stopping):
-    yaml_config = {
-        'model': {
-            'name': type(model).__name__,
-            'hyperparameters': {
-                'optimizer': {
-                    'type': 'Adam',
-                    'learning_rate': learning_rate,
-                    'beta_1': optimizer.defaults['betas'][0],
-                    'beta_2': optimizer.defaults['betas'][1]
-                },
-                'loss': 'CrossEntropyLoss',
-                'metrics': [
-                    'accuracy'
-                ]
-            }
-        },
-        'training': {
-            'batch_size': batch_size,
-            'epochs': epochs,
-            'early_stopping': {
-                'monitor': 'val_loss',
-                'patience': early_stopping.patience,
-            }
-        }
-    }
-
-    return yaml_config
+        return TrainingConfig(epochs, batch_size, early_stopping)
 
 
-def save_config_json(model):
-    json_config = {
-    "spec_version": "1.0",
-    "architecture": model.modified_vit.__class__.__name__ + model.custom_cnn.__class__.__name__,
-    "num_classes": 2,
-    "class_names": [
-    "Other",
-    "Tumor"
-  ],
-    "patch_size_pixels": 350,
-    "spacing_um_px": 0.25,
-    "transform": [
-    {
-      "name": "Resize",
-      "arguments": {
-        "size": 224
-      }
-    },
-    {
-      "name": "ToTensor"
-    },
-    {
-      "name": "Normalize",
-      "arguments": {
-        "mean": [
-          0.7238,
-          0.5716,
-          0.6779
-        ],
-        "std": [
-          0.112,
-          0.1459,
-          0.1089
-        ]
-      }
-    }
-  ]
-}
-    return json_config
+   
 
-# Training the model
 def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epochs, batch_size, early_stopping):
 
     learning_rate = 1e-3
@@ -161,13 +74,12 @@ def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epo
     # Save the configuration
     save_dir = create_timestamped_dir("./metadata")
     
-    config_yml_data = save_config_yaml(model, optimizer, learning_rate, epochs, batch_size, early_stopping) # Save the configuration in YAML format
+    config_yml_data = ConfigBuilder.save_config_yaml(model, optimizer, learning_rate, epochs, batch_size, early_stopping) # Save the configuration in YAML format
     save_config_to_yaml(config_yml_data, save_dir)
 
-    config_json_data = save_config_json(model)
+    config_json_data = ConfigBuilder.save_config_json(model) # Save the configuration in JSON format
     save_metadata_to_json(config_json_data, save_dir)
-
-
+    
 
     for epoch in range(epochs):
         model.train()
@@ -210,6 +122,3 @@ def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epo
         avg_validation_loss = validation_loss / len(validation_loader)
         accuracy = 100 * correct / total
         validation_text.text(f"Validation Loss: {avg_validation_loss:.4f}, Accuracy: {accuracy:.2f}%")
-
-    st.success("Training completed")
-    

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 # Custom CNN 01: 2 CNN layers, 1 Linear layer
 class CustomCNN_01(nn.Module):
     def __init__(self, input_channels, hidden_channels, num_layers = 2, num_classes=2):

@@ -37,9 +37,5 @@ class EarlyStopping:
         '''Saves model when validation loss decrease.'''
         if self.verbose:
             self.trace_func(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        
         save_model(model, save_dir)
-        # model_jit = torch.jit.trace(model, torch.randn(16, 3, 224, 224).cuda())
-        # torch.jit.save(model_jit, "jit.pt")
-        # torch.save(model, self.path)
         self.val_loss_min = val_loss
