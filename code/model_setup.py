@@ -1,10 +1,12 @@
 import streamlit as st
 import yaml
 import timm
+import torch
 from transformers import AutoModel
 from abc import ABC, abstractmethod
 from ViT_CNN_Block import ViTWithCustomCNN
 from TimmWithCNNBlock import TimmWithCustomCNN
+from timm.layers import SwiGLUPacked
 
 class ModelSetupStrategy(ABC):
     @abstractmethod
@@ -27,13 +29,26 @@ class ViTModelSetupStrategy(ModelSetupStrategy):
 
 class TimmModelSetupStrategy(ModelSetupStrategy):
     def create_base_model(self, model_name):
-        timm_model = timm.create_model(model_name, pretrained=True)
+       
+        if model_name == "hf-hub:MahmoodLab/uni":
+            # pretrained=True needed to load UNI weights (and download weights for the first time)
+            # init_values need to be passed in to successfully load LayerScale parameters (e.g. - block.0.ls1.gamma)
+            timm_model = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        
+        elif model_name == "hf-hub:paige-ai/Virchow":
+            # need to specify MLP layer and activation function for proper init
+            print("Loading Virchow model")
+            timm_model = timm.create_model("hf-hub:paige-ai/Virchow", pretrained=True, mlp_layer=SwiGLUPacked, act_layer=torch.nn.SiLU)
+            
+        else:
+            timm_model = timm.create_model(model_name, pretrained=True)
+        
         for param in timm_model.parameters():
             param.requires_grad = False  # Freeze encoder weights
         return timm_model
 
-    def create_custom_model(self, base_model, cnn_model_block, cnn_layers, hidden_channels):
-        return TimmWithCustomCNN(base_model, cnn_model_block, cnn_layers, hidden_channels)
+    def create_custom_model(self, base_model, cnn_model_block, cnn_layers, hidden_channels, models_name):
+        return TimmWithCustomCNN(base_model, cnn_model_block, cnn_layers, hidden_channels, models_name)
 
 class ModelSetupUI:
     """ 
@@ -107,9 +122,9 @@ class ModelSetup:
             raise ValueError(f"Unsupported model type: {self.model_type}")
 
     def setup(self):
-        base_model = self.strategy.create_base_model(self.model_name)
-        cnn_model_block, cnn_layers, hidden_channels = self.ui.get_cnn_parameters()
-        model = self.strategy.create_custom_model(base_model, cnn_model_block, cnn_layers, hidden_channels)
+        base_model = self.strategy.create_base_model(self.model_name) # Load the base model
+        cnn_model_block, cnn_layers, hidden_channels = self.ui.get_cnn_parameters() # Get the CNN parameters
+        model = self.strategy.create_custom_model(base_model, cnn_model_block, cnn_layers, hidden_channels, models_name=self.model_name) # Create the custom model
 
         trainable_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
         st.write('Number of trainable parameters:', '{0:.3f} Million'.format(trainable_parameters/1000000))

@@ -61,7 +61,7 @@ def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epo
     validation_loader = DataLoader(val_dataset_dict, batch_size=batch_size, collate_fn=collate_fn)
     test_loader = DataLoader(test_dataset_dict, batch_size=batch_size, collate_fn=collate_fn)
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate) # Try different optimizers such as SGD, AdamW, etc.
     criterion = nn.CrossEntropyLoss()
 
     st.title("Model Training Progress")
@@ -122,3 +122,20 @@ def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epo
         avg_validation_loss = validation_loss / len(validation_loader)
         accuracy = 100 * correct / total
         validation_text.text(f"Validation Loss: {avg_validation_loss:.4f}, Accuracy: {accuracy:.2f}%")
+    
+    # Test the model
+    test_loader_len = len(test_loader)
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for batch in test_loader:
+            inputs = batch['pixel_values'].to(device)
+            labels = batch['label'].to(device)  
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    
+    test_accuracy = 100 * correct / total
+    st.write(f"Test Accuracy: {test_accuracy:.2f}%")

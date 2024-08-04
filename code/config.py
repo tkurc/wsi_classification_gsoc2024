@@ -42,8 +42,8 @@ class ConfigBuilder:
         "Other",
         "Tumor"
     ],
-        "patch_size_pixels": 350,
-        "spacing_um_px": 0.25,
+        "patch_size_pixels": 100,
+        "spacing_um_px": 0.5,
         "transform": [
         {
         "name": "Resize",
@@ -58,14 +58,14 @@ class ConfigBuilder:
         "name": "Normalize",
         "arguments": {
             "mean": [
-            0.7238,
-            0.5716,
-            0.6779
+            0.5,
+            0.5,
+            0.5
             ],
             "std": [
-            0.112,
-            0.1459,
-            0.1089
+            0.5,
+            0.5,
+            0.5
             ]
         }
         }

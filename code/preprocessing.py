@@ -5,8 +5,9 @@ from PIL import Image
 import streamlit as st
 import timm
 from transformers import AutoFeatureExtractor
-
-
+from torchvision.transforms import Compose, Normalize
+import torch
+from timm.layers import SwiGLUPacked
 class PreprocessingStrategy:
     def preprocess_and_apply(self, huggingface_dataset, selected_model):
         raise NotImplementedError
@@ -14,11 +15,14 @@ class PreprocessingStrategy:
 class TransformersPreprocessingStrategy(PreprocessingStrategy):
     def preprocess_and_apply(self, huggingface_dataset, selected_model):
         feature_extractor = AutoFeatureExtractor.from_pretrained(selected_model)
+        normalize = Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) 
         
         def preprocess_images(example):
             image = Image.open(example['file_path']).convert("RGB")
             encoding = feature_extractor(images=image, return_tensors="pt")
-            example['pixel_values'] = encoding['pixel_values'][0]
+            pixel_values = encoding['pixel_values'][0]
+            pixel_values = normalize(pixel_values)  # Normalizing pixel values
+            example['pixel_values'] = pixel_values
             return example
 
         train_dataset_dict = huggingface_dataset['train'].map(preprocess_images)
@@ -34,13 +38,16 @@ class TransformersPreprocessingStrategy(PreprocessingStrategy):
 
 class TimmPreprocessingStrategy(PreprocessingStrategy):
     def preprocess_and_apply(self, huggingface_dataset, selected_model):
-        model = timm.create_model(selected_model, pretrained=True)
+        # model = timm.create_model(selected_model, pretrained=True)
+        model = timm.create_model(selected_model, pretrained=True, mlp_layer=SwiGLUPacked, act_layer=torch.nn.SiLU) # Virchow model
         config = timm.data.resolve_data_config({}, model=model)
         transform = timm.data.create_transform(**config)
+        normalize = Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
         def preprocess_images(example):
             image = Image.open(example['file_path']).convert("RGB")
             image = transform(image)
+            image = normalize(image)  # Normalizing pixel values
             example['pixel_values'] = image
             return example
 

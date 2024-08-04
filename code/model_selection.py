@@ -46,7 +46,8 @@ class ModelSelector(ABC):
         )
 
     def _display_selected_model(self, selected_model):
-        st.write(f"Selected model: {selected_model}")
+        print(f"Selected model: {selected_model}")
+        st.text(f"Selected model: {selected_model}")
 
 class TimmModelSelector(ModelSelector):
     """ Timm Model Selector """

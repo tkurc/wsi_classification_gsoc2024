@@ -72,7 +72,8 @@ def main():
                     st.session_state.training_completed = False
         else:
             st.write("Please select a model")
-
+        
+    time.sleep(30)
     # Inference section
     if st.session_state.training_completed:
         st.subheader("Inference")

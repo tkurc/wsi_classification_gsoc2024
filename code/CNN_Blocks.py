@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import streamlit as st
 
 # Custom CNN 01: 2 CNN layers, 1 Linear layer
 class CustomCNN_01(nn.Module):
@@ -85,30 +85,26 @@ class CustomCNN_04(nn.Module):
             nn.Conv2d(input_channels, hidden_channels, kernel_size=3, stride=1, padding=1),
             nn.ReLU()
         )
-        
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             self.layers.append(nn.Sequential(
                 nn.Conv2d(hidden_channels, hidden_channels, kernel_size=3, stride=1, padding=1),
                 nn.ReLU()
             ))
-        
         self.classifier = nn.Linear(hidden_channels, num_classes)
     
     def forward(self, x):
         # Ensure the input has 4 dimensions [batch_size, channels, height, width]
         if len(x.shape) == 3:
             x = x.unsqueeze(1)  # Adding a channel dimension
-        
+
         # Initial convolution
         x = self.initial_conv(x)
-        
         # Apply layers with skip connections
         for layer in self.layers:
             residual = x  # Save input for skip connection
             out = layer(x)
             x = out + residual  # Apply skip connection
-
         # Global average pooling
         x = x.mean(dim=[2, 3])  # Global average pooling
         x = self.classifier(x)
@@ -134,7 +130,10 @@ class CustomCNN_04(nn.Module):
 # print(output_03.shape)
 
 # Custom Model 04
-# C_04 = CustomCNN_04(input_channels=768, hidden_channels=64)
-# dummy_input = torch.randn(16, 768, 224, 224)
+# C_04 = CustomCNN_04(input_channels=1024, hidden_channels=512)
+# dummy_input = torch.randn(2, 197, 1024)
+# dummy_input = dummy_input.unsqueeze(1)
+# dummy_input = dummy_input.permute(0, 3, 1, 2)
+# print(dummy_input.shape)
 # output_04 = C_04(dummy_input)
 # print(output_04.shape)

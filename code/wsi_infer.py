@@ -1,5 +1,8 @@
+import os
 import subprocess
 import streamlit as st
+from click.testing import CliRunner
+from wsinfer.cli.infer import run
 
 def wsi_input_streamlit():
 
@@ -27,30 +30,35 @@ def wsi_input_streamlit():
 
     return st.session_state.wsi_dir, st.session_state.results_dir, st.session_state.model_path, st.session_state.config_path
 
+################## Using click testing (CliRunner) ##################
 def run_wsinfer(wsi_dir, results_dir, model_path, config_path):
-
     """ 
     wsinfer: https://github.com/SBU-BMI/wsinfer
     wsinfer-zoo: https://github.com/SBU-BMI/wsinfer-zoo
     """
-    
+    runner = CliRunner()
 
-    command = [
-        'wsinfer', 'run',
+    # Run the command
+    """
+    CliRunner object, which simulates running a command from the command line.
+    We use runner.invoke() to run the command, passing the run function and a list of arguments.
+    """
+    result = runner.invoke(run, [
         '--wsi-dir', wsi_dir,
         '--results-dir', results_dir,
         '--model-path', model_path,
         '--config', config_path
-    ]
-    
-    result = subprocess.run(command, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}")
-    else:
-        print(f"Output: {result.stdout}")
 
+    ])
+
+    # Check the result
+    if result.exit_code == 0:
+        print("Command executed successfully")
     
+    else:
+        print(f"Command failed with exit code {result.exit_code}")
+        print(result.output)
+
 
 def wsi_infer():
     if 'inference_completed' not in st.session_state:
@@ -67,4 +75,3 @@ def wsi_infer():
         st.write("Inference completed successfully!")
         if st.button("Go back to Training"):
             st.session_state.inference_completed = False
-    
