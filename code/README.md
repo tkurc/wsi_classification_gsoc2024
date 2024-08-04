@@ -8,7 +8,7 @@ This project aims to leverage pre-trained and foundation AI models for patch-lev
 git clone https://github.com/tkurc/wsi_classification_gsoc2024
 cd code # go into code directory
 
-# If you GPU follow this:
+# If you have GPU follow this:
 conda update conda
 conda env create -f environment.yml
 conda activate camicro
@@ -25,6 +25,34 @@ Training dataset by combining manually annotated patches(strong annotations)from
 <!-- <img src="https://drive.google.com/file/d/1aLL1PWk9LibT_p5ieH9izxFjVwUEKdqo/" width="350"> -->
 
 ![Example Image](./figures/images.jpeg)
+
+Upload the Whole slide images under `slides/{specific_folder}` and make sure when saving the `results` you select the folder from `results/{specific_folder}`.
+
+Folder Strcuture.
+```
+code/
+│
+├── slides/
+│   └── brca/
+│       ├── TCGA-Brca-3C-AALI-01Z-00-DX1.F6E9A5DF-D8FB-45CF-B4BD-C6B76294C291.svs
+│       └── ...  # List of other BRCA slide files
+│   └── thym/
+│       ├── TCGA-Thym-3G-AB19-01Z-00-DX1.ED755979-C885-4D7F-BF65-40088D398C32.svs
+│       └── ...  # List of other THYM slide files
+└── results/
+    └── brca/   # Analysis results for BRCA slides
+    └── thym/   # Analysis results for THYM slides
+        
+├── app.py      # Main application script
+├── preprocess.py  # Script for preprocessing data
+├── model_setup.py # Script for model setup
+├── wsi_Infer.py   # Script for inference on whole slide images
+├── training.py   # Script for training the model
+├── README.md  # Your markdown file explaining the project
+...
+...
+```
+
 # 3. Run Demo
 ```
 streamlit run app.py
