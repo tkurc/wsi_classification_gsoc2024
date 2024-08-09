@@ -14,7 +14,8 @@ class ModifiedTimm(nn.Module):
         """self.uni = self.timm.blocks[23].mlp.fc2.out_features # unipath # 1024
         self.gigapath = timm_model.blocks[39].mlp.fc2.out_features #gigapath # 1536
         self.virchow =  timm_model.blocks[31].mlp.fc2.out_features # virchow #out_features=1280"""
-        self.blocks_fc = timm_model.blocks[-1].mlp.fc2.out_features # For Virchow model, unipath, gigapath 
+        if timm_model in ["hf-hub:paige-ai/Virchow", "hf_hub:prov-gigapath/prov-gigapath", "hf-hub:MahmoodLab/uni"]:
+        	self.blocks_fc = timm_model.blocks[-1].mlp.fc2.out_features # For Virchow model, unipath, gigapath 
         
 
     def forward(self, x):
