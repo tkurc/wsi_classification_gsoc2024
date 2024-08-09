@@ -41,7 +41,10 @@ code/
 │       └── ...  # List of other THYM slide files
 └── results/
 │   └── brca/   # Analysis results for BRCA slides
-│   └── thym/   # Analysis results for THYM slides        
+│   └── thym/   # Analysis results for THYM slides   
+└── datasets/
+│   └── brca/   # BRCA Patches
+│   └── thym/   # THYM Patches            
 ├── app.py      # Main application script
 ├── preprocess.py  # Script for preprocessing data
 ├── model_setup.py # Script for model setup
