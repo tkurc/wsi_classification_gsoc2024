@@ -38,8 +38,15 @@ class TransformersPreprocessingStrategy(PreprocessingStrategy):
 
 class TimmPreprocessingStrategy(PreprocessingStrategy):
     def preprocess_and_apply(self, huggingface_dataset, selected_model):
-        # model = timm.create_model(selected_model, pretrained=True)
-        model = timm.create_model(selected_model, pretrained=True, mlp_layer=SwiGLUPacked, act_layer=torch.nn.SiLU) # Virchow model
+        if selected_model == "hf-hub:MahmoodLab/uni":
+            model = timm.create_model(selected_model, pretrained=True, init_values=1e-5, dynamic_img_size=True) # Virchow model
+        
+        elif selected_model == "hf-hub:paige-ai/Virchow":
+            timm.create_model("hf-hub:paige-ai/Virchow", pretrained=True, mlp_layer=SwiGLUPacked, act_layer=torch.nn.SiLU)
+        
+        else:
+            model = timm.create_model(selected_model, pretrained=True)
+        
         config = timm.data.resolve_data_config({}, model=model)
         transform = timm.data.create_transform(**config)
         normalize = Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])

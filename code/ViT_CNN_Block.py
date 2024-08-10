@@ -16,7 +16,7 @@ class ModifiedViT(nn.Module):
   
 # Combine the modified ViT and custom CNN
 class ViTWithCustomCNN(nn.Module):
-    def __init__(self, vit_model, cnn_model_block, cnn_layers, hidden_channels, num_classes = 2):
+    def __init__(self, vit_model, cnn_model_block, cnn_layers, hidden_channels, model_name = "", num_classes = 2):
         super(ViTWithCustomCNN, self).__init__()
         self.modified_vit = ModifiedViT(vit_model)
         

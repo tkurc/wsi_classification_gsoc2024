@@ -24,8 +24,8 @@ class ViTModelSetupStrategy(ModelSetupStrategy):
             param.requires_grad = False  # Freeze encoder weights
         return vit_model
 
-    def create_custom_model(self, base_model, cnn_model_block, cnn_layers, hidden_channels):
-        return ViTWithCustomCNN(base_model, cnn_model_block, cnn_layers, hidden_channels)
+    def create_custom_model(self, base_model, cnn_model_block, cnn_layers, hidden_channels, models_name):
+        return ViTWithCustomCNN(base_model, cnn_model_block, cnn_layers, hidden_channels, models_name)
 
 class TimmModelSetupStrategy(ModelSetupStrategy):
     def create_base_model(self, model_name):

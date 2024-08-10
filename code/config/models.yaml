@@ -7,4 +7,6 @@ Vit_Models:
   dino-vits8: "facebook/dino-vits8"
   vit-dino16: "facebook/dino-vits16"
   deit-base-distilled-patch16-224: "facebook/deit-base-distilled-patch16-224"
+  owkin/phikon: "owkin/phikon"
+  
   
