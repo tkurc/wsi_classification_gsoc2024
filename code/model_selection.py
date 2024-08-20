@@ -76,7 +76,7 @@ class TimmModelSelector(ModelSelector):
 class TransformersModelSelector(ModelSelector):
     """ Transformers Model Selector """
     def load_models(self):
-        cfg = self.config_loader.load("./config/models.yaml")
+        cfg = self.config_loader.load("./config/transformer_models.yaml")
         return cfg['Vit_Models']
 
     def select_model(self):
