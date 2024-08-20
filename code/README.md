@@ -59,3 +59,29 @@ code/
 ```
 streamlit run app.py
 ```
+
+# 4. Training using CLI
+```
+model_type -mt
+model -m
+cnn_block -cnnb
+cnn_layers -cnnl
+cnn_features -cnnf
+epochs -e
+batch_size -bs
+early_stop -es
+```
+```
+python app_cli.py -mt Transformers -m google/vit-base-patch16-224-in21k -cnnb CustomCNN_01 -cnnl 2 -cnnf 32 -e 5 -bs 16 -es 3
+```
+
+# 5, Inference using CLI
+```
+wsi_dir -i #Select your Slides directory path
+results_dir -o #Select results directory path
+config -c #Path to configuration for the trained model.
+model_path -p #Select Your Saved model path
+```
+```
+# python app_cli_inference.py -i ./slides/brca/ -o ./results/brca/ -c ./metadata/10h_29m_30s_17082024/metadata.json -p ./metadata/10h_29m_30s_17082024/model.pt
+```
