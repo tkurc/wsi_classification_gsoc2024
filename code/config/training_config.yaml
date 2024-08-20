@@ -1,0 +1,73 @@
+model_type:
+  - "Timm"
+  - "Transformers"
+
+model_name:
+  - Timm:
+      - res2net50_14w_8s_in1k: 'res2net50_14w_8s.in1k'
+      - res2net50_26w_6s_in1k: 'res2net50_26w_6s.in1k'
+      - xception41_tf_in1k: 'xception41.tf_in1k'
+      - xception41p_ra3_in1k: 'xception41p.ra3_in1k'
+      - xception65_tf_in1k: 'xception65.tf_in1k'
+      - inception_v3_gluon_in1k: 'inception_v3.gluon_in1k'
+      - inception_v3_tf_adv_in1k: 'inception_v3.tf_adv_in1k'
+      - inception_v4_tf_in1k: 'inception_v4.tf_in1k'
+      - hf-hub:MahmoodLab/uni: 'hf-hub:MahmoodLab/uni'
+      - hf_hub:prov-gigapath/prov-gigapath: 'hf_hub:prov-gigapath/prov-gigapath'
+      - hf-hub:paige-ai/Virchow : 'hf-hub:paige-ai/Virchow'
+  
+  - Transformers:
+      - vit-base-patch16-224-in21k: "google/vit-base-patch16-224-in21k"
+      - vit-base-patch32-224-in21k: "google/vit-base-patch32-224-in21k"
+      - vit-large-patch16-224-in21k: "google/vit-large-patch16-224-in21k"
+      - dino-vitb8: "facebook/dino-vitb8"
+      - dino-vits8: "facebook/dino-vits8"
+      - vit-dino16: "facebook/dino-vits16"
+      - deit-base-distilled-patch16-224: "facebook/deit-base-distilled-patch16-224"
+      - owkin/phikon: "owkin/phikon"
+
+cnn_block:
+  - CustomCNN_01
+  - CustomCNN_02
+  - CustomCNN_03
+  - CustomCNN_04
+
+cnn_layers:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+
+cnn_features:
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+
+epochs:
+  - 10
+  - 20
+  - 30
+  - 40
+  - 50
+  - 60
+  - 70
+
+batch_size:
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+
+early_stopping:
+  - 3
+  - 5
+  - 7
+  - 10
+  
