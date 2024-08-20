@@ -51,6 +51,7 @@ class TrainingConfigFactory:
 def training(model, train_dataset_dict, val_dataset_dict, test_dataset_dict, epochs, batch_size, early_stopping):
 
     learning_rate = 1e-3
+    print("Model Type:", type(model))
 
     def collate_fn(batch):
         pixel_values = torch.stack([item['pixel_values'] for item in batch])

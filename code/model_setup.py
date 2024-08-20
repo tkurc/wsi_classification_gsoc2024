@@ -36,8 +36,7 @@ class TimmModelSetupStrategy(ModelSetupStrategy):
             timm_model = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
         
         elif model_name == "hf-hub:paige-ai/Virchow":
-            # need to specify MLP layer and activation function for proper init
-            print("Loading Virchow model")
+            # need to specify MLP layer and activation function for proper initialization
             timm_model = timm.create_model("hf-hub:paige-ai/Virchow", pretrained=True, mlp_layer=SwiGLUPacked, act_layer=torch.nn.SiLU)
             
         else:
@@ -129,4 +128,28 @@ class ModelSetup:
         trainable_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
         st.write('Number of trainable parameters:', '{0:.3f} Million'.format(trainable_parameters/1000000))
 
+        return model
+
+
+
+
+class ModelSetupCli:
+    def __init__(self, model_name, model_type, cnn_model_block, cnn_layers, hidden_channels):
+        self.model_name = model_name
+        self.model_type = model_type
+        self.cnn_model_block = cnn_model_block
+        self.cnn_layers = cnn_layers
+        self.hidden_channels = hidden_channels
+
+    def _get_strategy(self):
+        if self.model_type == 'Transformers':
+            return ViTModelSetupStrategy()
+        elif self.model_type == 'Timm':
+            return TimmModelSetupStrategy()
+        else:
+            raise ValueError(f"Unsupported model type: {self.model_type}")
+    def setup(self):
+        strategy = self._get_strategy()
+        base_model = strategy.create_base_model(self.model_name)
+        model = strategy.create_custom_model(base_model, cnn_model_block=self.cnn_model_block, cnn_layers=self.cnn_layers, hidden_channels=self.hidden_channels, models_name=self.model_name)
         return model
