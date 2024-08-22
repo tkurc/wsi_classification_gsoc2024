@@ -111,7 +111,8 @@ def main(model_type, model, cnn_block, cnn_layers, cnn_features, epochs, batch_s
 
 
 
-
+if __name__ == '__main__':
+    main()
 # google/vit-base-patch16-224-in21k
 # Transformers
 # python app_cli.py -mt Transformers -m google/vit-base-patch16-224-in21k -cnnb CustomCNN_01 -cnnl 2 -cnnf 32 -e 5 -bs 16 -es 3 -i ./slides/brca/ -o ./results/brca/ -c ./metadata/10h_29m_30s_17082024/metadata.json -p ./metadata/10h_29m_30s_17082024/model.pt
