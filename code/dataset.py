@@ -174,7 +174,7 @@ def load_dataset():
     huggingface_dataset = TILDataset(root_dir='datasets/').convert_to_huggingface_dataset_format()
     return huggingface_dataset
 
-d = load_dataset()
-print(d)
-print(d["train"]["file_path"][0])
-print(d["train"]["label"][0])
+# d = load_dataset()
+# print(d)
+# print(d["train"]["file_path"][0])
+# print(d["train"]["label"][0])

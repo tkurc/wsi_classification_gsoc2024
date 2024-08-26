@@ -23,10 +23,11 @@ from model_selection import model_selection
 from model_setup import ModelSetup, ModelSetupCli
 from training import training, TrainingConfigFactory
 from earlystopping import EarlyStopping
-from wsi_infer import wsi_infer, run_wsinfer
+from wsi_infer import run_wsinfer
 
 import click
-
+from click.testing import CliRunner
+from wsinfer.cli.infer import run
 
 @click.command()
 @click.option(
@@ -51,7 +52,7 @@ import click
 
 @click.option(
     "-c",
-    "--config",
+    "--config_path",
     prompt='Select Your Config file Path', 
     required=True,
     help=(
@@ -70,11 +71,34 @@ import click
     ),
 )
 
-def inference(wsi_dir, results_dir, config, model_path):   
+
+def inference(wsi_dir, results_dir, config_path, model_path):   
     # Inference
-    print("Starting Inference")
-    run_wsinfer(wsi_dir, results_dir, config, model_path)
-    print("Inference Completed!")
+    # print("Starting Inference")
+    # run_wsinfer(wsi_dir, results_dir, config, model_path)
+    # print("Inference Completed!")
+    runner = CliRunner()
+
+    # Run the command
+    """
+    CliRunner object, which simulates running a command from the command line.
+    We use runner.invoke() to run the command, passing the run function and a list of arguments.
+    """
+    result = runner.invoke(run, [
+        '--wsi-dir', wsi_dir,
+        '--results-dir', results_dir,
+        '--config', config_path,
+        '--model-path', model_path,
+
+    ])
+
+    # Check the result
+    if result.exit_code == 0:
+        print("Command executed successfully")
+    
+    else:
+        print(f"Command failed with exit code {result.exit_code}")
+        print(result.output)
 
 if __name__ == '__main__':
     inference()
