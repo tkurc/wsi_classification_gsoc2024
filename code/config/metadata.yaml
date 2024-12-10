@@ -1,0 +1,11 @@
+
+foundation_models:
+  - type: ViT
+    url: "https://huggingface.co/vit-base-patch16-224"
+    output_shape: [1, 768]
+  - type: timm
+    url: "https://github.com/rwightman/pytorch-image-models"
+    output_shape: [1, 512]
+decoders:
+  - name: custom_decoder
+    input_shape: "any"
